@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://aframe.io/releases/0.6.1/aframe.min.js"></script>
+<script src="aframe-ui-widgets.js"></script>
+</head>
+<body>
+
+<a-scene id="lol">
+    <a-sky color="#ECECEC"></a-sky>
+    <a-entity ui-button id="plot-button" position="1 1.5 -1" rotation="90 0 0"></a-entity>
+    <a-camera wasd-controls>
+        <a-cursor></a-cursor>
+    </a-camera>
+</a-scene>
+
+<script>
+
+(function() {
+    var xWidth = 0.25;
+    var zWidth = 0.25;
+
+    function tweenEntityPosition(endCoordinatesFn) {
+        return function(data) {
+            var node = this;
+            var startCoordinates = node.getAttribute('position');
+            var endCoordinates = endCoordinatesFn(data);
+            return function(t) {
+                return {x: startCoordinates.x + t * (endCoordinates.x - startCoordinates.x),
+                        y: startCoordinates.y + t * (endCoordinates.y - startCoordinates.y),
+                        z: startCoordinates.z + t * (endCoordinates.z - startCoordinates.z)};
+            }
+        };
+    }
+    
+    function makeRandomData() {
+        var data = [];
+        for (var x = 0.0; x <= 4.0; x += xWidth) {
+            for (var z = 0.0; z <= 4.0; z += zWidth) {
+                data.push([x, z, 0.1 * (x*x + 2*z*z) * (Math.random() / 2.0 + 0.75)]);
+            }
+        }
+        return data;
+    }
+
+    var scene = d3.select('a-scene');
+
+    function initializeScene() {
+        scene.selectAll('a-box')
+             .data(makeRandomData())
+             .enter()
+             .append('a-box')
+             .attr('color', '#224488')
+             .attr('width', xWidth)
+             .attr('depth', zWidth);
+    }
+         
+    function plotRandomData() {
+        scene.selectAll('a-box')
+             .data(makeRandomData())
+             .transition()
+             .attr('height', function(d) { return d[2]; })
+             .attrTween('position', tweenEntityPosition(function(data) {
+                return {x: -data[0], z: -data[1], y: data[2] / 2};
+             }));
+    }
+
+    document.getElementById('plot-button').addEventListener('pressed', function() {
+        plotRandomData();
+    });
+
+    initializeScene();
+    plotRandomData();
+})();
+
+</script>
+</body>
+</html>
